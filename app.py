@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
@@ -24,12 +25,22 @@ class JobStatusResponse(BaseModel):
     status: str
     details: Optional[Dict[str, Any]] = None
 
+def remove_oldest_job():
+    """Remove the oldest job if there are more than 10 jobs in the dictionary."""
+    if len(jobs) > 10:
+        # Sort jobs by start_time and get the oldest job's id
+        oldest_job_id = min(
+            jobs, 
+            key=lambda job_id: jobs[job_id]["details"]["start_time"]
+        )
+        del jobs[oldest_job_id]
+        print(f"Removed oldest job: {oldest_job_id} to maintain maximum of 10 jobs")
+
 @app.post("/run-pipeline", response_model=PipelineResponse)
 async def start_pipeline(request: PipelineRequest, background_tasks: BackgroundTasks):
     """Start a new pipeline job for processing video files."""
     
     # Create a unique job ID based on match ID and timestamp
-    import time
     job_id = f"{request.match_id}_{int(time.time())}"
     
     # Initialize job status
@@ -42,6 +53,9 @@ async def start_pipeline(request: PipelineRequest, background_tasks: BackgroundT
             "steps_completed": []
         }
     }
+    
+    # Check if we need to remove the oldest job
+    remove_oldest_job()
     
     # Add the job to background tasks
     background_tasks.add_task(
@@ -133,9 +147,6 @@ async def run_pipeline_job(job_id: str, match_id: str, device: str):
         
         # Override print for this function execution
         builtins.print = custom_print
-        
-        # Import time here to avoid circular import
-        import time
         
         # Execute the pipeline
         run_pipeline(match_id, device)
