@@ -1,0 +1,6 @@
+numpy==2.2.4
+opencv_python==4.11.0.86
+tqdm==4.67.1
+ultralytics>=8.0.0
+python-dotenv>=1.0.0
+backblaze-sdk @ https://github.com/kaanozer7/backblaze-sdk/releases/download/v0.1.0/backblaze_sdk-0.1.0-py3-none-any.whl
